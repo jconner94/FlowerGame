@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html>
+
+<script type="text/javascript" src="UI.js"></script>
+<script type="text/javascript" src="Garden.js"></script>
+<script type="text/javascript" src="FlowerGame.js"></script>
+
+<head>
+    <meta charset="utf-8"/>
+    <title>Flower Game</title>
+</head>
+
+<style>
+    body {
+        font: 16px 'Verdana', sans-serif;
+    }    
+</style>
+
+<script>
+    var Game = {};
+    init = function() {
+        Game.garden = FlowerGame(document.getElementById("board"));
+
+        setInterval(update, 1000 / 60);
+
+        function update() {
+            Game.garden.update();
+        }
+    }
+
+    toggleGrid = function() {
+        Game.garden.show_grid = !Game.garden.show_grid;
+    }
+
+    updateSize = function() {
+        Game.garden.updateSize();
+    }
+
+    updateVisual = function() {
+        Game.garden.visual = document.getElementById("selectvisual").value;
+        if(Game.garden.visual == 'animated') {
+            document.getElementById('selectspeed').setAttribute('style', 'position: absolute; left: 270px; top: 80px; width: 120px; height: 25px; display: inline;');
+            document.getElementById('step').setAttribute('style', 'position: absolute; left: 270px; top: 80px; width: 120px; height: 25px; display: none;');
+            Game.garden.speed = document.getElementById('selectspeed').value;
+        } else {
+            document.getElementById('selectspeed').setAttribute('style', 'position: absolute; left: 270px; top: 80px; width: 120px; height: 25px; display: none;');
+            document.getElementById('step').setAttribute('style', 'position: absolute; left: 270px; top: 80px; width: 120px; height: 25px; display: inline;');
+            Game.garden.speed = 0;
+        }
+    }
+
+    updateSpeed = function() {
+        Game.garden.speed = document.getElementById("selectspeed").value;
+    }
+
+    updateColor = function(type) {
+        if(type == 'alive') {
+            Game.garden.color_alive = document.getElementById('selectcoloralive').value;
+        } else {
+            Game.garden.color_dead = document.getElementById('selectcolordead').value;
+        }
+    }
+
+    resetColor = function() {
+        document.getElementById('selectcoloralive').value = document.getElementById('selectcoloralive').getAttribute('value');
+        document.getElementById('selectcolordead').value = document.getElementById('selectcolordead').getAttribute('value');
+        updateColor('alive');
+        updateColor('dead');
+    }
+
+    updateRule = function(i,j) {
+        id = 'select' + i;
+        if(j == 0) {
+            id += 'alive';
+        } else {
+            id += 'dead';
+        }
+
+        Game.garden.rules[i][j] = Game.garden.toBool(document.getElementById(id).value);
+    }
+
+    resetRules = function() {
+        for(let i = 0; i < 9; i++) {
+            id = 'select'
+            id += i;
+            idAlive = id + 'alive';
+            idDead = id + 'dead';
+            document.getElementById(idAlive).selectedIndex = 1;
+            document.getElementById(idDead).selectedIndex = 1;
+        }
+
+        document.getElementById('select2alive').selectedIndex = 0;
+        document.getElementById('select3alive').selectedIndex = 0;
+        document.getElementById('select3dead').selectedIndex = 0;
+
+        for(let i = 0; i < 9; i++) {
+            for(let j = 0; j < 2; j++) {
+                updateRule(i,j);
+            }
+        }
+    }
+
+    resetGarden = function() {
+        Game.garden.resetGarden();
+    }
+
+    play = function() {
+        document.getElementById('play').setAttribute('style', 'position: absolute; left: 120px; top: 210px; width: 120px; height: 25px; display: none;');
+        document.getElementById('pause').setAttribute('style', 'position: absolute; left: 120px; top: 210px; width: 120px; height: 25px; display: inline;');
+        Game.garden.playing = true;
+    }
+
+    pause = function() {
+        document.getElementById('pause').setAttribute('style', 'position: absolute; left: 120px; top: 210px; width: 120px; height: 25px; display: none;');
+        document.getElementById('play').setAttribute('style', 'position: absolute; left: 120px; top: 210px; width: 120px; height: 25px; display: inline;');
+        Game.garden.playing = false;
+    }
+
+</script>
+
+<body onload="init()">
+<div id="game">
+    <div id="board" style="position: absolute">
+        <!--<canvas id="fg" top="0" left="0" width="768" height="768" style="border: 1px solid black"></canvas>
+        <canvas id="bg" top="0" left="0" width="768" height="768"></canvas>-->
+        <canvas id="bg" style="position: absolute; left: 0px; top: 0px; border: 1px solid black" height="768" width="768"></canvas>
+        <canvas id="fg" style="position: absolute; left: 0px; top: 0px; border: 1px solid black" height="768" width="768"></canvas>
+    </div>
+    <div id="info" style="position: absolute; left: 830px;">
+        <div id="TitleContainer" style="position: absolute; left: 80px; height: 40px; width: 300px;">
+            <b>Flower Game</b>
+             - 
+            <a href="https://github.com/jconner94">James Conner</a>
+        </div>
+        <div id="OptionsContainer" style="height: 80px; width: 600px;">
+            <!--Grid Options-->
+            <label id="labelsize" style="position: absolute; left: 0px; top: 40px; width: 120px; height: 25px;">Board Size:</label>
+            <select id="selectsize" onchange="updateSize()" style="position: absolute; left: 120px; top: 40px; width: 120px; height: 25px;">
+                <option value=4>4 x 4</option>
+                <option value=8 selected>8 x 8</option>
+                <option value=16>16 x 16</option>
+                <option value=32>32 x 32</option>
+                <option value=64>64 x 64</option>
+            </select>
+            <button id="showgrid" onclick="toggleGrid()" style="position: absolute; left: 270px; top: 40px; width: 120px; height: 25px;">Toggle Grid</button>
+
+            <!--Animation Options-->
+            <label id="labelvisual" style="position: absolute; left: 0px; top: 80px; width: 120px; height: 25px;">Visual Style:</label>
+            <select id="selectvisual" onchange="updateVisual()" style="position: absolute; left: 120px; top: 80px; width: 120px; height: 25px;">
+                <option value="animated" selected>Animated</option>
+                <option value="step">Single-Step</option>
+            </select>
+            <select id="selectspeed" onchange="updateSpeed()" style="position: absolute; left: 270px; top: 80px; width: 120px; height: 25px; display: inline;">
+                <option value=.25>0.25x Speed</option>
+                <option value=.5>0.5x Speed</option>
+                <option value=1 selected>1x Speed</option>
+                <option value=2>2x Speed</option>
+                <option value=4>4x Speed</option>
+            </select>
+            <button id="step" onclick="Game.garden.garden.nextMove()" style="position: absolute; left: 270px; top: 80px; width: 120px; height: 25px; display: none;">Step</button>
+
+            <!--Color Options-->
+            <label id="labelcolors" style="position: absolute; left: 0px; top: 120px; width: 120px; height: 25px;">Colors:</label>
+            <label id="labelcoloralive" style="position: absolute; left: 120px; top: 120px; width: 60px; height: 25px;">Alive:</label>
+            <input type="color" id="selectcoloralive" value="#00FF00" onchange="updateColor('alive')" style="position: absolute; left: 180px; top: 120px; width: 60px; height: 25px;">
+            <label id="labelcolordead" style="position: absolute; left: 120px; top: 150px; width: 60px; height: 25px;">Dead:</label>
+            <input type="color" id="selectcolordead" value="#964B00" onchange="updateColor('dead')" style="position: absolute; left: 180px; top: 150px; width: 60px; height: 25px;">
+            <button id="resetcolors" onclick="resetColor()" style="position: absolute; left: 270px; top: 120px; width: 120px; height: 25px;">Reset Colors</button>
+
+            <!--Simulation Options-->
+            <button id="play" onclick="play()" style="position: absolute; left: 120px; top: 210px; width: 120px; height: 25px; display: inline;">Play</button>
+            <button id="pause" onclick="pause()" style="position: absolute; left: 120px; top: 210px; width: 120px; height: 25px; display: none;">Pause</button>
+            <button id="resetgarden" onclick="resetGarden()" style="position: absolute; left: 270px; top: 210px; width: 120px; height: 25px;">Reset Garden</button>
+
+            <!--Rule Change Options-->
+            <label id="labelrulechanges" style="position: absolute; left: 120px; top: 300px; width: 120px; height: 25px;">Rule Changes</label>
+            <label id="labelneighborcount" style="position: absolute; left: 0px; top: 345px; width: 120px; height: 25px;">Neighbors</label>
+            <label id="labelalive" style="position: absolute; left: 120px; top: 345px; width: 120px; height: 25px;">Alive</label>
+            <label id="labeldead" style="position: absolute; left: 180px; top: 345px; width: 120px; height: 25px;">Dead</label>
+            <button id="resetrules" onclick="resetRules()" style="position: absolute; left: 270px; top: 345px; width: 120px; height: 25px;">Reset Rules</button>
+            <label id="label0" style="position: absolute; left: 30px; top: 390px; width: 60px; height: 25px;">0</label>
+            <select id="select0alive" onchange="updateRule(0,0)" style="position: absolute; left: 120px; top: 390px; width: 59px; height: 25px;">
+                <option value=true>Life</option>
+                <option value=false selected>Death</option>
+            </select>
+            <select id="select0dead" onchange="updateRule(0,1)" style="position: absolute; left: 180px; top: 390px; width: 59px; height: 25px;">
+                <option value=true>Life</option>
+                <option value=false selected>Death</option>
+            </select>
+            <label id="label1" style="position: absolute; left: 30px; top: 435px; width: 60px; height: 25px;">1</label>
+            <select id="select1alive" onchange="updateRule(1,0)" style="position: absolute; left: 120px; top: 435px; width: 59px; height: 25px;">
+                <option value=true>Life</option>
+                <option value=false selected>Death</option>
+            </select>
+            <select id="select1dead" onchange="updateRule(1,1)" style="position: absolute; left: 180px; top: 435px; width: 59px; height: 25px;">
+                <option value=true>Life</option>
+                <option value=false selected>Death</option>
+            </select>
+            <label id="label2" style="position: absolute; left: 30px; top: 480px; width: 60px; height: 25px;">2</label>
+            <select id="select2alive" onchange="updateRule(2,0)" style="position: absolute; left: 120px; top: 480px; width: 59px; height: 25px;">
+                <option value=true selected>Life</option>
+                <option value=false>Death</option>
+            </select>
+            <select id="select2dead" onchange="updateRule(2,1)" style="position: absolute; left: 180px; top: 480px; width: 59px; height: 25px;">
+                <option value=true>Life</option>
+                <option value=false selected>Death</option>
+            </select>
+            <label id="label3" style="position: absolute; left: 30px; top: 525px; width: 60px; height: 25px;">3</label>
+            <select id="select3alive" onchange="updateRule(3,0)" style="position: absolute; left: 120px; top: 525px; width: 59px; height: 25px;">
+                <option value=true selected>Life</option>
+                <option value=false>Death</option>
+            </select>
+            <select id="select3dead" onchange="updateRule(3,1)" style="position: absolute; left: 180px; top: 525px; width: 59px; height: 25px;">
+                <option value=true selected>Life</option>
+                <option value=false>Death</option>
+            </select>
+            <label id="label4" style="position: absolute; left: 30px; top: 570px; width: 60px; height: 25px;">4</label>
+            <select id="select4alive" onchange="updateRule(4,0)" style="position: absolute; left: 120px; top: 570px; width: 59px; height: 25px;">
+                <option value=true>Life</option>
+                <option value=false selected>Death</option>
+            </select>
+            <select id="select4dead" onchange="updateRule(4,1)" style="position: absolute; left: 180px; top: 570px; width: 59px; height: 25px;">
+                <option value=true>Life</option>
+                <option value=false selected>Death</option>
+            </select>
+            <label id="label5" style="position: absolute; left: 30px; top: 615px; width: 60px; height: 25px;">5</label>
+            <select id="select5alive" onchange="updateRule(5,0)" style="position: absolute; left: 120px; top: 615px; width: 59px; height: 25px;">
+                <option value=true>Life</option>
+                <option value=false selected>Death</option>
+            </select>
+            <select id="select5dead" onchange="updateRule(5,1)" style="position: absolute; left: 180px; top: 615px; width: 59px; height: 25px;">
+                <option value=true>Life</option>
+                <option value=false selected>Death</option>
+            </select>
+            <label id="label6" style="position: absolute; left: 30px; top: 660px; width: 60px; height: 25px;">6</label>
+            <select id="select6alive" onchange="updateRule(6,0)" style="position: absolute; left: 120px; top: 660px; width: 59px; height: 25px;">
+                <option value=true>Life</option>
+                <option value=false selected>Death</option>
+            </select>
+            <select id="select6dead" onchange="updateRule(6,1)" style="position: absolute; left: 180px; top: 660px; width: 59px; height: 25px;">
+                <option value=true>Life</option>
+                <option value=false selected>Death</option>
+            </select>
+            <label id="label7" style="position: absolute; left: 30px; top: 705px; width: 60px; height: 25px;">7</label>
+            <select id="select7alive" onchange="updateRule(7,0)" style="position: absolute; left: 120px; top: 705px; width: 59px; height: 25px;">
+                <option value=true>Life</option>
+                <option value=false selected>Death</option>
+            </select>
+            <select id="select7dead" onchange="updateRule(7,1)" style="position: absolute; left: 180px; top: 705px; width: 59px; height: 25px;">
+                <option value=true>Life</option>
+                <option value=false selected>Death</option>
+            </select>
+            <label id="label8" style="position: absolute; left: 30px; top: 750px; width: 60px; height: 25px;">8</label>
+            <select id="select8alive" onchange="updateRule(8,0)" style="position: absolute; left: 120px; top: 750px; width: 59px; height: 25px;">
+                <option value=true>Life</option>
+                <option value=false selected>Death</option>
+            </select>
+            <select id="select8dead" onchange="updateRule(8,1)" style="position: absolute; left: 180px; top: 750px; width: 59px; height: 25px;">
+                <option value=true>Life</option>
+                <option value=false selected>Death</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<div id="flavortext" style="position: absolute; left: 10px; top: 800px; width: 800px;">
+    <i>These are the rules of a game. Let it be played upon an infinite two-dimensional grid of flowers.<br>
+        Rule One.   A living flower with less than two living neighbors is cut off.<br>
+        It dies.<br>
+        Rule Two.   A living flower with two or three living neighbors is connected.<br>
+        It lives.<br>
+        Rule Three. A living flower with more than three living neighbors is starved and overcrowded.<br>
+        It dies.<br>
+        Rule Four.  A dead flower with exactly three living neighbors is reborn.<br>
+        It springs back to life.<br>
+        The only play permitted in the game is the arrangement of the initial flowers.</i><br><br>
+        -The Darkness
+</div>
+
+<div id="rules" style="position: absolute; left: 1300px; top: 0px;"><!--<div id="rules" style="position: absolute; left: 10px; top: 800px;">-->
+    <div id="gamedescription" style="position: absolute; left: 0px; top: 10px; width: 600px;">
+        This is a recreation of the
+        <a href="https://www.destinypedia.com/Flower_game">Flower Game</a>
+        from the lore of the
+        <a href="https://www.bungie.net/7/en/Destiny/NewLight">Destiny</a>
+        video game franchise. The game serves as a metaphor for the forces that govern
+        the existence, spawning life and bringing death in an endless cycle. Played within an
+        infinite 
+        <a href="https://www.destinypedia.com/Garden">Garden</a>,
+        each session of the game represents a new universe.
+        The Flower Game is itself a variation of
+        <a href="https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life">Conway's Game of Life</a>.<br><br>
+        The game is played on an infinite grid, represented here by having the grid loop back around on itself.
+        Each turn every cell is evaluated based on the number of living neighbors it has, and may change states
+        as a result of this evaluation. A cell's neighbors are the 8 cells that surround it (taking the looping
+        into consideration). In the original game, the only player input is the initial configuration of the board. The game
+        then begins and plays out according to the rules laid out below:<br>
+        <ol>
+            <li>A living flower with less than two living neighbors is cut off. It dies.</li>
+            <li>A living flower with two or three living neighbors is connected. It lives.</li>
+            <li>A living flower with more than three living neighbors is starved and overcrowded. It dies.</li>
+            <li>A dead flower with exactly three living neighbors is reborn. It springs back to life.</li>  
+        </ol> 
+        The game is a constant cycle of
+        birth, persistence, and death, ending only when all life is gone with no chance of returning, or when an
+        infinitely repeating pattern is reached. In the Destiny universe, this pattern is known as the "Final Shape"
+        and manifests as the cyber-organic race known as the 
+        <a href="https://www.destinypedia.com/Vex">Vex</a>. In other words, under the initial ruleset, the Vex are
+        the logical conclusion of life in the universe.<br><br>
+        Tired of each iteration of their game ending with this Final Shape, one player, the
+        <a href="https://www.destinypedia.com/Light">Gardener</a>, decided to introduce a new rule intended to encourage
+        diversity and experimentation within the game, leading to new patterns. The other player, the
+        <a href="https://www.destinypedia.com/Darkness">Winnower</a>,
+        was displeased with the new rule, as it appreciated the simple logic leading to an inevitable end of each game.
+        This disagreement led to a violent conflict between the Gardener and the Winnower, a conflict that spawned and destroyed
+        entire universes and realities in its wake, eventually creating the universe in which the main story of Destiny takes place.<br><br>
+        In this simulation, you may alter the rules to see how the Garden is affected. Change how a specific number of living neighbors affects
+        living or dead cells, or even spontaneously create or destroy life while the simulation is running. Will your changes result in the
+        complete loss of life in the Garden? Will you discover some new Final Shape? Or will you achieve the Gardener's vision, an everlasting
+        Garden infinitely creating new patterns?<br><br>
+        To start the game, click any number of cells in the Garden. These cells will be the initial configuration of the game, traditionally
+        the only move to be made. At this stage, you may click the "Play" button to begin. You can use the controls next to the board to 
+        change the board's appearance and the rules of the game. Change the grid size, the speed at which the simulation plays, and the colors
+        representing life and death at the top. Under the "Rule Changes" header, "Neighbors" corresponds to the number of living neighbors a
+        given cell has. "Alive" and "Dead" refer to that cell's current status. For example, the 3rd row reads "2 Life Death", meaning if a 
+        cell has 2 living neighbors it will live if it is alive and remain dead if it is dead. If we were to change the rule to read "2 Life Life",
+        it would then come back to life if it had 2 living neighbors while dead. Click the various "Reset X" buttons to return 'X' to the default state.
+    </div>
+</div>
+
+</body>
+</html>
